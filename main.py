@@ -28,7 +28,7 @@ def find_by_index(id):
 def read_root():
     return {"Message": "welcome to my api"}
 
-@app.get("/post")
+@app.get("/posts")
 def read_post():
     return {"data": my_posts}
 
@@ -58,3 +58,15 @@ def delete_post(id: int):
         detail=f"{id} is not available")
     my_posts.pop(index)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.put("/posts/{id}")
+def update_post(id: int,post: Post):
+    index = find_by_index(id)
+    if index == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"{id} not found")
+    post_dict = post.dict()
+    post_dict['id'] = id
+    my_posts[index] = post_dict
+    return{"message": post_dict}
