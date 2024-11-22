@@ -2,6 +2,9 @@ from fastapi import FastAPI, Response, status, HTTPException
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 
 app = FastAPI()
 
@@ -10,6 +13,16 @@ class Post(BaseModel):
     content: str
     published: bool = True
     rating: Optional[int] = None
+
+try:
+    conn = psycopg2.connect(host='localhost', database = "fastAPI", user = 'postgres',
+    password ='bena313', cursor_factory = RealDictCursor)
+    cursor = conn.cursor()
+    print('Database was connected successiful')
+except Exception as error:
+    print('Failed to connect')
+    print('error :', error)
+
 
 my_posts = [{"title": "this is a title 1", "content": "this is content of post 1", "id": 1}, 
 {"title":"favourite food", "content": "pizza","id":2}]
@@ -30,20 +43,26 @@ def read_root():
 
 @app.get("/posts")
 def read_post():
-    return {"data": my_posts}
+    cursor.execute('SELECT * FROM posts')
+    post = cursor.fetchall()
+    print(post)
+    return {"data": post}
 
 
 @app.post("/posts")
 def create(posts: Post):
-    post_dict = posts.dict()
-    post_dict['id'] = 3
-    my_posts.append(post_dict)
-    return {"message": post_dict}
+    cursor.execute("INSERT INTO posts(title, content, published) VALUES(%s,%s,%s) RETURNING * ",
+    (posts.title, posts.content, posts.published))
+    new_post = cursor.fetchone()
+    conn.commit()
+
+    return {"message": new_post}
 
 
 @app.get("/posts/{id}")
-def get_post(id: int, ):
-    post = find_post(id)
+def get_post(id: int):
+    cursor.execute('SELECT * FROM posts WHERE id = %s', (str(id),))
+    post = cursor.fetchone()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
         detail=f"{id} not found")
@@ -52,11 +71,13 @@ def get_post(id: int, ):
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int):
-    index = find_by_index(id)
-    if index == None:
+    cursor.execute('DELETE FROM posts WHERE id = %s returning * ', (str(id),))
+    deleted_post = cursor.fetchone()
+    conn.commit()
+    if deleted_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
         detail=f"{id} is not available")
-    my_posts.pop(index)
+    
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
