@@ -1,12 +1,20 @@
-from fastapi import FastAPI, Response, status, HTTPException
+from fastapi import FastAPI, Response, status, HTTPException ,Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from . import models
+from .database import engine,session_Local, get_db
+from sqlalchemy.orm import Session
 
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+
+
 
 class Post(BaseModel):
     title: str
@@ -40,6 +48,10 @@ def find_by_index(id):
 @app.get("/")
 def read_root():
     return {"Message": "welcome to my api"}
+
+@app.get("/ben")
+def test_post(db: session_Local = Depends(get_db)):
+    return{"status": "success"}
 
 @app.get("/posts")
 def read_post():
