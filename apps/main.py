@@ -20,8 +20,7 @@ class Post(BaseModel):
     title: str
     content: str
     published: bool = True
-    rating: Optional[int] = None
-
+    
 try:
     conn = psycopg2.connect(host='localhost', database = "fastAPI", user = 'postgres',
     password ='bena313', cursor_factory = RealDictCursor)
@@ -51,30 +50,37 @@ def read_root():
 
 @app.get("/ben")
 def test_post(db: session_Local = Depends(get_db)):
-    return{"status": "success"}
+    posts = db.query(models.Post).all()
+    return{"data":posts}
 
 @app.get("/posts")
-def read_post():
-    cursor.execute('SELECT * FROM posts')
-    post = cursor.fetchall()
-    print(post)
-    return {"data": post}
+def read_post(db: session_Local = Depends(get_db)):
+    #cursor.execute('SELECT * FROM posts')
+    #post = cursor.fetchall()
+    #print(post)
+    posts = db.query(models.Post).all()
+    return {"data": posts}
 
 
 @app.post("/posts")
-def create(posts: Post):
-    cursor.execute("INSERT INTO posts(title, content, published) VALUES(%s,%s,%s) RETURNING * ",
-    (posts.title, posts.content, posts.published))
-    new_post = cursor.fetchone()
-    conn.commit()
+def create(posts: Post, db: session_Local = Depends(get_db)):
+    #cursor.execute("INSERT INTO posts(title, content, published) VALUES(%s,%s,%s) RETURNING * ",
+    #(posts.title, posts.content, posts.published))
+    #new_post = cursor.fetchone()
+    #conn.commit()
+    new_post = models.Post(**posts.dict())
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
 
     return {"message": new_post}
 
 
 @app.get("/posts/{id}")
-def get_post(id: int):
-    cursor.execute('SELECT * FROM posts WHERE id = %s', (str(id),))
-    post = cursor.fetchone()
+def get_post(id: int, db: session_Local = Depends(get_db)):
+    #cursor.execute('SELECT * FROM posts WHERE id = %s', (str(id),))
+    #post = cursor.fetchone()
+    post = db.query(models.Post).filter(models.Post.id == id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
         detail=f"{id} not found")
@@ -82,24 +88,33 @@ def get_post(id: int):
 
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int):
-    cursor.execute('DELETE FROM posts WHERE id = %s returning * ', (str(id),))
-    deleted_post = cursor.fetchone()
-    conn.commit()
-    if deleted_post == None:
+def delete_post(id: int, db: session_Local = Depends(get_db)):
+
+    #cursor.execute('DELETE FROM posts WHERE id = %s returning * ', (str(id),))
+    #deleted_post = cursor.fetchone()
+    #conn.commit()
+    post = db.query(models.Post).filter(models.Post.id == id)
+    if post.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
         detail=f"{id} is not available")
+    post.delete(synchronize_session = False)
+    db.commit()
     
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.put("/posts/{id}")
-def update_post(id: int,post: Post):
-    index = find_by_index(id)
-    if index == None:
+def update_post(id: int,post: Post, db: session_Local = Depends(get_db)):
+    #index = find_by_index(id)
+    updated_post = db.query(models.Post).filter(models.Post.id == id)
+
+    if updated_post.first() == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
         detail=f"{id} not found")
-    post_dict = post.dict()
-    post_dict['id'] = id
-    my_posts[index] = post_dict
-    return{"message": post_dict}
+    updated_post.update(post.dict(), synchronize_session = False)
+    db.commit()
+
+    #post_dict = post.dict()
+    #post_dict['id'] = id
+    #my_posts[index] = post_dict
+    return{"message": updated_post.first()}
