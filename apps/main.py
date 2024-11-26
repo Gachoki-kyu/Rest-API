@@ -2,7 +2,7 @@ from fastapi import FastAPI, Response, status, HTTPException ,Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from typing import Optional, List
-from .Routers import post,user
+from .Routers import post,user, auth
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from . import models, schemas, utils
@@ -42,6 +42,7 @@ def find_by_index(id):
 
 app.include_router(post.router)
 app.include_router(user.router)
+app.include_router(auth.router)
 
 @app.get("/")
 def read_root():

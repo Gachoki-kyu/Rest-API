@@ -6,7 +6,10 @@ from ..database import get_db
 from ..schemas import Post, PostCreate, Post_Response
 
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/posts",
+    tags=['posts']
+)
 
 
 @router.get("/posts", response_model=List[Post_Response])
