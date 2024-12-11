@@ -3,9 +3,10 @@ from .. import database, models, schemas, utils, outh2
 from sqlalchemy.orm import Session
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 
+
 router = APIRouter( tags = ['Authentication'])
 
-@router.post("/login")
+@router.post("/login", response_model=schemas.token1)
 def login(sign_in: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == sign_in.username).first()
     if not user:
@@ -16,5 +17,5 @@ def login(sign_in: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(
          detail = 'Incorrect email or password')
 
     create_token = outh2.create_access_token({'user_id': user.id})
-    return {'access token':create_token , "token type": 'bearer'}
+    return {"access_token": create_token, "token_type": "bearer"}
 
