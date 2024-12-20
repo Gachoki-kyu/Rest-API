@@ -3,24 +3,25 @@ from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from. import schemas
-
-
+from .config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=60)):
-    secret_key = "your_secret_key"  # Replace with your own secret key
+secret_key = settings.secret_key
+algorithm1 = settings.algorithm
+access_token1 = settings.access_token_expire_minutes
+
+def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=access_token1)):
     to_encode = data.copy()
     expires = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expires})
-    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm="HS256")
+    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm1)
     return encoded_jwt
 
 def verify_token(token: str, credential_exception):
-    secret_key = "your_secret_key"  # Replace with your own secret key
     
     try:
-        decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+        decoded_token = jwt.decode(token, secret_key, algorithms=algorithm1)
         id: str = decoded_token.get("user_id")
         if id is None:
             raise credential_exception()
