@@ -25,7 +25,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
     return new_user
 
-@router.put("/users/{id}", response_model=schemas.userout)
+@router.put("/{id}", response_model=schemas.userout)
 def get_user(id: int, db: Session=Depends(get_db)):
     get_him = db.query(models.User).filter(models.User.id == id).first()
     if get_him == None:

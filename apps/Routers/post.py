@@ -22,13 +22,13 @@ def read_post(db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.PostCreate)
-def create(posts: Post, db: Session = Depends(get_db), sec = Depends(outh2.get_current_user)):
+def create(post: PostCreate, db: Session = Depends(get_db), current_user: int = Depends(outh2.get_current_user)):
     #cursor.execute("INSERT INTO posts(title, content, published) VALUES(%s,%s,%s) RETURNING * ",
     #(posts.title, posts.content, posts.published))
     #new_post = cursor.fetchone()
     #conn.commit()
-    print(sec)
-    new_post = models.Post(**posts.dict())
+    
+    new_post = models.Post(user_id = current_user.id, **post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -48,7 +48,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db), sec = Depends(outh2.get_current_user)):
+def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(outh2.get_current_user)):
 
     #cursor.execute('DELETE FROM posts WHERE id = %s returning * ', (str(id),))
     #deleted_post = cursor.fetchone()
@@ -64,7 +64,7 @@ def delete_post(id: int, db: Session = Depends(get_db), sec = Depends(outh2.get_
 
 
 @router.put("/{id}")
-def update_post(id: int,post: Post, db: Session = Depends(get_db), sec = Depends(outh2.get_current_user)):
+def update_post(id: int,post: Post, db: Session = Depends(get_db), current_user: int = Depends(outh2.get_current_user)):
     #index = find_by_index(id)
     updated_post = db.query(models.Post).filter(models.Post.id == id)
 

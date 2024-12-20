@@ -2,12 +2,13 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
+from. import schemas
 
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)):
+def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=60)):
     secret_key = "your_secret_key"  # Replace with your own secret key
     to_encode = data.copy()
     expires = datetime.utcnow() + expires_delta
@@ -23,7 +24,7 @@ def verify_token(token: str, credential_exception):
         id: str = decoded_token.get("user_id")
         if id is None:
             raise credential_exception()
-        return decoded_token
+        #return decoded_token
         token_data = schemas.tokendata(id = id)
         return token_data
     except JWTError:

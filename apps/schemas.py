@@ -13,8 +13,9 @@ class PostCreate(Post):
 
 class Post_Response(Post):
     id: int
-    
     created_at: datetime
+    user_id: int
+
 
     class config:
         orm_mode = True
