@@ -1,4 +1,4 @@
 .env
-venv1
+venv1/
 another.py
 __pycache__
