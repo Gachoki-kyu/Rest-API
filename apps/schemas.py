@@ -31,8 +31,6 @@ class Post_Response(Post):
 class UserCreate(BaseModel):
     email : EmailStr
     password: str
-    
-
 
 class Login(BaseModel):
     email : EmailStr
@@ -48,3 +46,7 @@ class tokendata(BaseModel):
 class vote(BaseModel):
     post_id: int
     direction: conint(le=1)
+
+class vote_response(BaseModel):
+    Post : Post_Response
+    likes: int

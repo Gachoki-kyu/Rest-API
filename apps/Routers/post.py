@@ -2,6 +2,7 @@ from .. import models, utils, schemas, outh2
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Depends, APIRouter, status, Response
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from ..database import get_db
 from ..schemas import Post, PostCreate, Post_Response
 
@@ -11,14 +12,23 @@ router = APIRouter(
     tags=['posts']
 )
 
-
-@router.get("/", response_model=List[Post_Response])
+#@router.get("/", response_model=List[Post_Response])
+@router.get("/", response_model=List[schemas.vote_response])
 def read_post(db: Session = Depends(get_db), current_user: int = Depends(outh2.get_current_user),
 limit: int = 10, skip: int = 0, search: Optional[str]=""):
     #cursor.execute('SELECT * FROM posts')
     #post = cursor.fetchall() 
     #print(post)
-    posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+    #posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(
+     #   limit).offset(skip).all()
+
+
+    results = db.query(models.Post ,func.count(models.Vote.post_id).label('likes')).join(
+        models.Vote, models.Post.id == models.Vote.post_id, isouter=True).group_by(models.Post.id
+        ).filter(models.Post.title.contains(search)).limit(
+        limit).offset(skip).all()
+    posts = list(map(lambda x: x._asdict(), results))
+        
     return posts
 
 
@@ -37,20 +47,26 @@ def create(post: PostCreate, db: Session = Depends(get_db), current_user: int = 
     return new_post
 
 
-@router.get("/{id}", response_model = Post_Response)
+@router.get("/{id}", response_model = schemas.vote_response)
 def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(outh2.get_current_user)):
     #cursor.execute('SELECT * FROM posts WHERE id = %s', (str(id),))
     #post = cursor.fetchone()
-    post = db.query(models.Post).filter(models.Post.id == id).first()
+    #post = db.query(models.Post).filter(models.Post.id == id).first()
+
+    post = db.query(models.Post ,func.count(models.Vote.post_id).label('likes')).join(
+        models.Vote, models.Post.id == models.Vote.post_id, isouter=True).group_by(models.Post.id
+       ).filter(models.Post.id == id).first()
+    post1 = post._asdict()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
         detail=f"{id} not found")
 
-    if post.user_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-        detail="not authorized  to perform requested action")
+    #if post.user_id != current_user.id:
+     #   raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+      #  detail="not authorized  to perform requested action")
+    
 
-    return post
+    return post1
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
