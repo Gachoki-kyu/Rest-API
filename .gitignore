@@ -2,3 +2,4 @@
 venv1/
 another.py
 __pycache__
+.env1
