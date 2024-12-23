@@ -24,4 +24,4 @@ app.include_router(votes.router)
 
 @app.get("/")
 def read_root():
-    return {"Message": "welcome to my api"}
+    return {"Message": "welcome to my api.....mbwa wewe najua unajiuliza ni nini inaendelea hapa"}
